@@ -1,100 +1,95 @@
-const ticTac = document.querySelector(".ticTac");
+// ---------- Elements ----------
+const board = document.getElementById("board");
 const boxes = document.querySelectorAll(".box");
-const h1 = document.getElementsByTagName('h1');
+const title = document.getElementById("title");
 const rBtn = document.getElementById("rstbtn");
+const themeSelect = document.getElementById("theme");
+const htmlEl = document.documentElement;
 
-let currentPlayer = 'X';
-let count = 0;
+// ---------- Game State ----------
+let currentPlayer = "X";
+let filledCount = 0;
+const winningCondition = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
 
-let winningCondition = [
-    [0,1,2],
-    [3,4,5],
-    [6,7,8],
+// ---------- Theme Handling ----------
+(function initTheme() {
+  const saved = localStorage.getItem("ttt-theme") || "minimal";
+  htmlEl.setAttribute("data-theme", saved);
+  themeSelect.value = saved;
+})();
 
-    [0,3,6],
-    [1,4,7],
-    [2,5,8],
+themeSelect.addEventListener("change", (e) => {
+  const t = e.target.value;
+  htmlEl.setAttribute("data-theme", t);
+  localStorage.setItem("ttt-theme", t);
+});
 
-    [0,4,8],
-    [2,4,6]
-]
+// ---------- Helpers ----------
+function clearBoardVisuals() {
+  boxes.forEach(b => {
+    b.textContent = "";
+    b.classList.remove("X","O","winnerClass");
+  });
+}
 
+function endGame(message) {
+  title.textContent = message;
+  board.removeEventListener("click", onBoardClick);
+}
 
+function applyWinnerStyles(indices) {
+  indices.forEach(i => boxes[i].classList.add("winnerClass"));
+}
 
-function startGame(e){
-
-    if(e.target.innerText === "" && e.target.className !== "ticTac"){
-            e.target.innerText = currentPlayer;
-            count++;
-            winner();
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';    
-        }
-
-    if(count === 9){
-        h1[0].innerText = `MATCH IS DRAWN`;    
+function checkWinner() {
+  for (const line of winningCondition) {
+    const [a,b,c] = line;
+    const va = boxes[a].textContent;
+    const vb = boxes[b].textContent;
+    const vc = boxes[c].textContent;
+    if (va && va === vb && vb === vc) {
+      return { symbol: va, indices: line };
     }
-        
+  }
+  return null;
 }
 
+// ---------- Game Logic ----------
+function onBoardClick(e) {
+  const cell = e.target;
+  if (!cell.classList.contains("box")) return;
+  if (cell.textContent !== "") return;
 
-ticTac.addEventListener('click', startGame);
+  cell.textContent = currentPlayer;
+  cell.classList.add(currentPlayer); // colorize X/O
+  filledCount++;
 
-// ticTac.addEventListener('click', (e)=>{
-//     // console.log(e)
-//     // console.log(e.target)
+  const result = checkWinner();
+  if (result) {
+    applyWinnerStyles(result.indices);
+    endGame(`Winner is ${result.symbol}`);
+    return;
+  }
 
-//     // e.target.textContent="Jai Siya Ram"
-//     // e.target.innerText="Jai Siya Ram"
+  if (filledCount === 9) {
+    endGame("MATCH IS DRAWN");
+    return;
+  }
 
-//     if(e.target.innerText === "" && e.target.className !== "ticTac"){
-//         e.target.innerText = currentPlayer;
-//         winner();
-//         currentPlayer = currentPlayer === 'X' ? 'O' : 'X';    
-//     }
-    
-// });
-
-function winner(){
-    winningCondition.forEach((item)=>{
-        let index0 = item[0];
-        let index1 = item[1];
-        let index2 = item[2];
-        // console.log(item, index0, index1, index2);
-
-        let val0 = boxes[index0].innerText;
-        let val1 = boxes[index1].innerText;
-        let val2 = boxes[index2].innerText;
-
-        
-        // console.log(index0, val0, index1, val1, index2, val2);
-
-        if(val0!=='' && val1!=='' && val2!==''){
-            if(val0 === val1 && val1 === val2)
-            {
-                boxes[index0].classList.add("winnerClass")
-                boxes[index1].classList.add("winnerClass")
-                boxes[index2].classList.add("winnerClass")
-                // boxes[index0].style.backgroundColor="darkgreen";
-                // boxes[index1].style.backgroundColor="darkgreen";
-                // boxes[index2].style.backgroundColor="darkgreen";
-                count = 0;
-                h1[0].innerText = `Winner is ${val0}`;
-                h1[0].style.fontSize = "80px";
-                ticTac.removeEventListener('click', startGame);
-
-            }
-        }
-    })
+  currentPlayer = currentPlayer === "X" ? "O" : "X";
 }
 
+board.addEventListener("click", onBoardClick);
 
-rBtn.addEventListener('click', ()=>{
-    boxes.forEach(item=>{
-        item.classList.remove("winnerClass")
-        item.innerText='';
-    });
-    h1[0].innerText = `Tic-Tac-Toe`;
-    h1[0].style.fontSize = "35px";
-    currentPlayer = 'X';
-    ticTac.addEventListener('click', startGame);
+// ---------- Restart ----------
+rBtn.addEventListener("click", () => {
+  clearBoardVisuals();
+  title.textContent = "Tic-Tac-Toe";
+  currentPlayer = "X";
+  filledCount = 0;
+  board.addEventListener("click", onBoardClick, { once: false });
 });
