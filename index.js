@@ -1,3 +1,5 @@
+
+
 // ---------- Elements ----------
 const board = document.getElementById("board");
 const boxes = document.querySelectorAll(".box");
